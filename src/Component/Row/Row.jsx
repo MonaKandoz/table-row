@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { EdittingContext } from "../../Context/Editting.context";
 
 const Row = (props) => {
-  var { primaryKey, setPrimaryKey, addToData, data, setData } =
+  var { primaryKey, setPrimaryKey, addToData, setData, dataToView } =
     useContext(EdittingContext);
   var { index, rowData } = props;
  
@@ -21,14 +21,20 @@ const Row = (props) => {
 
   var resetData = ()=>{
     if (window.confirm("Are you sure?")) {
-      setPrimaryKey( localStorage.getItem("primary"))
-      setData(JSON.parse(localStorage.getItem("data")));
+     /*  setPrimaryKey( localStorage.getItem("primary"))
+      setData(JSON.parse(localStorage.getItem("data"))); */
+      if(primaryKey === index){
+         setPrimaryKey("")
+      }
     }
   }
  
   return (
     <>
-      <tr id={`row_${index}`}>
+      <tr
+        className={`row_${rowData.agancy}`}
+        id={`${rowData.agancy}_${rowData.id}`}
+      >
         <td style={{ position: "relative" }}>
           <select
             id={`agancy_${index}`}
@@ -57,7 +63,7 @@ const Row = (props) => {
             className="input"
             value={rowData.otop ? rowData.otop : ""}
             onChange={() => changeData()}
-            autoFocus={data.length - 1 === index ? "autofocus" : ""}
+            autoFocus={dataToView.length - 1 === index ? "autofocus" : ""}
           />
         </td>
         <td>
@@ -70,7 +76,7 @@ const Row = (props) => {
               value={rowData.otop}
               checked={parseInt(primaryKey) === index ? true : false}
               onChange={() => setPrimary()}
-              disabled={data.length === index ? "disabled" : ""}
+              disabled={dataToView.length === index ? "disabled" : ""}
             />
             <span className="checkmark"></span>
           </label>
@@ -78,8 +84,8 @@ const Row = (props) => {
         <td>
           <button
             className="del-btn"
-            onClick={() => resetData()}
-            disabled={data.length === index ? "disabled" : ""}
+            onClick={() => resetData(index)}
+            disabled={dataToView.length === index ? "disabled" : ""}
           >
             Delete
           </button>

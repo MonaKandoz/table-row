@@ -4,44 +4,112 @@ import Row from "../Row/Row";
 import './Editing.css'
 
 const Editing = () => {
-  var { displayEditing, setDisplayEditing, data, setData, primaryKey, setPrimaryKey } =
-    useContext(EdittingContext);
+  var {
+    displayEditing,
+    setDisplayEditing,
+    data,
+    setData,
+    dataToView,
+    setDataToView,
+    setNewData,
+    newData,
+    primaryKey,
+    setPrimaryKey,
+  } = useContext(EdittingContext);
 
   var saveData = ()=>{
-    if (data !== null || data !== []) {
-      const existingAgancy = data.find(
-        (d) => d.agancy === data[primaryKey].agancy && d !== data[primaryKey]
-      );
+    if (dataToView !== null || dataToView !== []) {
+      const duplicateAgancy = dataToView
+        .map((e) => e["agancy"])
+        .map((e, i, final) => final.indexOf(e) !== i && i)
+        .filter((obj) => dataToView[obj])
+        .map((e) => dataToView[e]["agancy"]);
+
       var length = document.getElementsByClassName("warning").length;
-      for( var i =0; i<length; i++){
+      for (var i = 0; i < length; i++) {
         document.getElementsByClassName("warning")[i].style.display = "none";
       }
-      if (existingAgancy) {
-        document
-          .getElementById(`row_${primaryKey}`)
-          .getElementsByClassName("warning")[0].style.display = "block";
-        document
-          .getElementById(`row_${existingAgancy.id}`)
-          .getElementsByClassName("warning")[0].style.display = "block";
+      if (duplicateAgancy.length !== 0) {
+        for (var j = 0; j < duplicateAgancy.length; j++) {
+          var repeated = document.querySelectorAll(
+            `.row_${duplicateAgancy[j]}`
+          );
+          for (var r = 0; r < repeated.length; r++) {
+            var repeatedID = repeated[r].id;
+            document
+              .getElementById(repeatedID)
+              .getElementsByClassName("warning")[0].style.display = "block";
+          }
+        }
       } else if (window.confirm("Are you sure?")) {
-        localStorage.setItem("data", JSON.stringify(data));
-        localStorage.setItem("primary", primaryKey);
-        setDisplayEditing('none')
+        setDisplayEditing("none");
+        if (newData !== []) {
+          setData(dataToView);
+          for (var n = 0; n < newData.length; n++) {
+            let dataToPost = newData[n];
+            const existingData = data.find((d) => d.id === dataToPost.id);
+             
+            if (existingData){
+              fetch(`http://localhost:3004/data/${dataToPost.id}`, {
+                method: "PUT",
+                body: JSON.stringify({
+                  ...dataToPost,
+                }),
+                headers: {
+                  "Content-type": "application/json; charset=UTF-8",
+                },
+              }).catch((err) => {
+                  console.log(err.message);
+                });
+            }else{
+              fetch("http://localhost:3004/data", {
+                method: "POST",
+                body: JSON.stringify({
+                  ...dataToPost,
+                }),
+                headers: {
+                  "Content-type": "application/json; charset=UTF-8",
+                },
+              }).catch((err) => {
+                  console.log(err.message);
+                });
+              }
+          }
+          
+        }
+
+        fetch("http://localhost:3004/primary", {
+          method: "POST",
+          body: JSON.stringify({
+            id: primaryKey,
+          }),
+          headers: {
+            "Content-type": "application/json; charset=UTF-8",
+          },
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            // Handle data
+            localStorage.setItem("primary", data.id);
+          })
+          .catch((err) => {
+            console.log(err.message);
+          });
       }
     }
-    
+    setNewData([]);
   }
 
   var cancelSaving = ()=>{
     setDisplayEditing("none");
     setPrimaryKey(localStorage.getItem("primary"));
-    setData(JSON.parse(localStorage.getItem("data")));
+    setDataToView(data);
   }
 
-  var dataLength = data.length;
+  var dataLength = dataToView.length;
   return (
     <div id="editting_win" style={{ display: `${displayEditing}` }}>
-      <div style={{maxHeight: '300px', overflowY: 'scroll'}}>
+      <div style={{ maxHeight: "300px", overflowY: "scroll" }}>
         <table>
           <thead>
             <tr>
@@ -52,11 +120,11 @@ const Editing = () => {
             </tr>
           </thead>
           <tbody>
-            {data?.map((data, index) => {
+            {dataToView?.map((data, index) => {
               return (
                 <Row
                   key={`data_${index}`}
-                  index={index}
+                  index={data.id}
                   rowData={data}
                 />
               );
@@ -74,8 +142,12 @@ const Editing = () => {
         </table>
       </div>
       <div>
-        <button className="edit-btn" onClick={() => saveData()}>Save</button>
-        <button className="edit-btn"  onClick={() => cancelSaving()}>Cancel</button>
+        <button className="edit-btn" onClick={() => saveData()}>
+          Save
+        </button>
+        <button className="edit-btn" onClick={() => cancelSaving()}>
+          Cancel
+        </button>
       </div>
     </div>
   );

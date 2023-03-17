@@ -1,6 +1,7 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 
 var addData = (data, dataToAdd)=>{
+  if(data !== []){
    // find if data contains dataToAdd
    const existingData = data.find((d) => d.id === dataToAdd.id);
 
@@ -10,6 +11,7 @@ var addData = (data, dataToAdd)=>{
        d === existingData ? dataToAdd : d
      );
    }
+  }
 
    return [...data, { ...dataToAdd }];
                   
@@ -21,27 +23,33 @@ export const EdittingContext = createContext({
   addToData: () => {},
   data: [],
 });
-function getInitialData() {
-  const data = localStorage.getItem("data");
-  if (data === null || data === []) {
-    return [];
-  }
-  return JSON.parse(data);
-}
-function getInitialPrimary() {
-  const primary = localStorage.getItem("primary");
-  if (primary === null || primary === []) {
-    return '';
-  }
-  return primary;
-}
+
 export const EdittingProvidor = ({ children }) => {
   const [ displayEditing, setDisplayEditing ] = useState("none");
-  const [primaryKey, setPrimaryKey] = useState(getInitialPrimary);
-  const [data, setData] = useState(getInitialData);
+  const [primaryKey, setPrimaryKey] = useState('');
+  const [data, setData] = useState([]);
+  const [newData, setNewData] = useState([]);
+  const [dataToView, setDataToView] = useState(data);
+ 
+  useEffect(() => {
+    fetch("http://localhost:3004/data")
+      .then((res) => res.json())
+      .then((json) => {
+        setData(json);
+        setDataToView(json);
+      });
+
+      fetch("http://localhost:3004/primary")
+        .then((res) => res.json())
+        .then((json) => {
+          setPrimaryKey(json.id);
+          localStorage.setItem("primary", json.id);
+        });
+  }, []);
 
   const addToData = (dataToAdd) => {
-    setData(addData(data, dataToAdd));
+    setDataToView(addData(dataToView, dataToAdd));
+    setNewData(addData(newData, dataToAdd));
     return;
   };
   const value = {
@@ -52,8 +60,12 @@ export const EdittingProvidor = ({ children }) => {
     addToData,
     data,
     setData,
+    newData,
+    dataToView,
+    setDataToView,
+    setNewData,
   };
-
+  
   return (
     <EdittingContext.Provider value={value}>
       {children}

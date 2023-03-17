@@ -4,20 +4,19 @@ import { EdittingContext } from "./Context/Editting.context";
 import Editing from "./Component/Editting/Editing";
 
 function App() {
-  var {
-    setDisplayEditing,
-    primaryKey,
-    data
-  } = useContext(EdittingContext);
-  console.log(data, primaryKey);
-  console.log(data !== [] && primaryKey !== "");
+  var { setDisplayEditing, primaryKey, dataToView } = useContext(EdittingContext);
+    
   return (
     <div className="App">
       <label htmlFor="OTPO">OTPO</label>
       <input
         type="text"
         id="OTPO"
-        value={data  && primaryKey !== ''  ? data[primaryKey].otop : ""}
+        value={
+          dataToView !== [] && primaryKey !== ""
+            ? dataToView[primaryKey].otop
+            : ""
+        }
         readOnly
       />
       <button onClick={() => setDisplayEditing("flex")}>Edit</button>
